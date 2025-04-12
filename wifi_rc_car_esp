@@ -1,0 +1,107 @@
+#include <ESP8266WiFi.h>
+
+// 🔑 Wi-Fi credentials (your mobile hotspot)
+const char* ssid = "V2025";
+const char* password = "Prakash123";
+
+// 🔌 Motor pins
+const int IN1 = 5;  // D1 -> IN1 (Motor A)
+const int IN2 = 4;  // D2 -> IN2 (Motor A)
+const int IN3 = 0;  // D3 -> IN3 (Motor B)
+const int IN4 = 2;  // D4 -> IN4 (Motor B)
+
+void backward() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void forward() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+}
+
+void left() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void right() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+}
+
+void stopMotors() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+}
+
+
+
+WiFiServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+
+  // Set motor pins as OUTPUT
+  pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
+  stopMotors();
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  // Print IP address
+  Serial.println();
+  Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Start server
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available();
+  if (!client) return;
+
+  Serial.println("New Client Connected");
+  String request = client.readStringUntil('\r');
+  Serial.println(request);
+  client.flush();
+
+  // Ignore favicon.ico request
+  if (request.indexOf("/favicon.ico") != -1) {
+    Serial.println("Ignored favicon request");
+    return;
+  }
+
+  // MOTOR ACTIONS
+  if (request.indexOf("/forward") != -1 || request.indexOf("/move?dir=forward") != -1) forward();
+  else if (request.indexOf("/backward") != -1 || request.indexOf("/move?dir=backward") != -1) backward();
+  else if (request.indexOf("/left") != -1 || request.indexOf("/move?dir=left") != -1) left();
+  else if (request.indexOf("/right") != -1 || request.indexOf("/move?dir=right") != -1) right();
+  else if (request.indexOf("/stop") != -1 || request.indexOf("/move?dir=stop")) stopMotors();
+
+  // Send Web Page
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println();
+  client.println("<html><head><title>Robot Control</title></head><body>");
+  client.println("<h1>ESP8266 Motor Control</h1>");
+  client.println("<a href='/forward'><button>Forward</button></a><br><br>");
+  client.println("<a href='/backward'><button>Backward</button></a><br><br>");
+  client.println("<a href='/left'><button>Left</button></a>");
+  client.println("<a href='/right'><button>Right</button></a><br><br>");
+  client.println("<a href='/stop'><button>Stop</button></a>");
+  client.println("</body></html>");
+  client.stop();
+
+  // Small delay to avoid multiple rapid requests
+  delay(100);  // Delay to prevent missing commands
+}
