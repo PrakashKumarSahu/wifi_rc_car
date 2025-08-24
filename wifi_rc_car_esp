@@ -1,14 +1,20 @@
+// Motor A pins  (using IN3, IN4)
+#define IN3 0    // D3
+#define IN4 2    // D4
+#define ENA 12   // D6 PWM
+
+// Motor B pins  (using IN1, IN2)
+#define IN1 5    // D1
+#define IN2 4    // D2
+#define ENB 14   // D5 PWM
+
 #include <ESP8266WiFi.h>
 
 // 🔑 Wi-Fi credentials (your mobile hotspot)
 const char* ssid = "V2025";
 const char* password = "Prakash123";
 
-// 🔌 Motor pins
-const int IN1 = 5;  // D1 -> IN1 (Motor A)
-const int IN2 = 4;  // D2 -> IN2 (Motor A)
-const int IN3 = 0;  // D3 -> IN3 (Motor B)
-const int IN4 = 2;  // D4 -> IN4 (Motor B)
+
 
 void backward() {
   digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
@@ -41,7 +47,8 @@ WiFiServer server(80);
 
 void setup() {
   Serial.begin(115200);
-
+  pinMode(ENA,OUTPUT); pinMode(ENB,OUTPUT);
+  digitalWrite(ENA,HIGH); digitalWrite(ENB,HIGH);
   // Set motor pins as OUTPUT
   pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
